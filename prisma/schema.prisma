@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  recommendations Recommendation[]
+  diseaseDetections DiseaseDetection[]
+}
+
+model Recommendation {
+  id          String    @id @default(cuid())
+  type        String    // "CROP" or "FERTILIZER"
+  result      String
+  parameters  Json      // Store input parameters as JSON
+  createdAt   DateTime  @default(now())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model DiseaseDetection {
+  id          String    @id @default(cuid())
+  diseaseName String
+  confidence  Float
+  imageUrl    String
+  treatment   String?
+  createdAt   DateTime  @default(now())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model PumpStatus {
+  id            String    @id @default(cuid())
+  isActive      Boolean   @default(false)
+  waterDelivered Float    @default(0)
+  lastUpdated   DateTime  @default(now())
+} 
