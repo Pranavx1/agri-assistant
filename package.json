@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/helmet": "^4.0.0",
@@ -46,10 +45,11 @@
     "@types/node": "^20.19.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.17",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "prisma": "^6.9.0",
-    "tailwindcss": "^4",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
 }

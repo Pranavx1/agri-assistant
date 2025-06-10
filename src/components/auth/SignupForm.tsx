@@ -54,7 +54,7 @@ export function SignupForm() {
       }
 
       router.push("/login");
-    } catch (err) {
+    } catch (_) {
       setError("Failed to create account");
     }
   };
