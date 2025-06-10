@@ -23,6 +23,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
+  console.log("LoginForm rendered");
   const router = useRouter();
   const [error, setError] = useState<string>("");
 
@@ -75,7 +76,7 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <Input
+            <input
               {...register("password")}
               type="password"
               placeholder="Password"
