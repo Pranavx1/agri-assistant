@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Leaf, Droplet, Camera, Lightbulb } from "lucide-react";
+import { useEffect } from "react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -26,8 +27,18 @@ const cardVariants = {
 };
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen relative p-6 overflow-hidden">

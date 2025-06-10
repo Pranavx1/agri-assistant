@@ -8,6 +8,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  console.log("AuthContext: user=", user, "loading=", loading);
+
   useEffect(() => {
     // Check for stored user data on mount
     const storedUser = localStorage.getItem("user");
@@ -31,9 +33,11 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || "Login failed");
       }
       setUser(data);
+      console.log("AuthContext: User logged in:", data);
       localStorage.setItem("user", JSON.stringify(data));
       return data;
     } catch (err) {
+      console.error("AuthContext: Login error:", err);
       throw err;
     }
   };
@@ -52,15 +56,18 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || "Signup failed");
       }
       setUser(data);
+      console.log("AuthContext: User signed up:", data);
       localStorage.setItem("user", JSON.stringify(data));
       return data;
     } catch (err) {
+      console.error("AuthContext: Signup error:", err);
       throw err;
     }
   };
 
   const logout = () => {
     setUser(null);
+    console.log("AuthContext: User logged out");
     localStorage.removeItem("user");
   };
 
