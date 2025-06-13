@@ -17,12 +17,30 @@ import {
 } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { UserPlus, User, Mail, Lock, ArrowRight } from "lucide-react";
+import { z } from "zod";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5 },
 };
+
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters long")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(
+    /[^A-Za-z0-9]/,
+    "Password must contain at least one special character"
+  );
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters long"),
+  email: z.string().email("Please enter a valid email address"),
+  password: passwordSchema,
+});
 
 export default function SignupPage() {
   const router = useRouter();
@@ -32,11 +50,38 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  const validateForm = () => {
+    try {
+      signupSchema.parse({ name, email, password });
+      setValidationErrors({});
+      return true;
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const errors = {};
+        err.errors.forEach((error) => {
+          if (error.path[0] === "password") {
+            errors[error.path[0]] = "Insecure password";
+          } else {
+            errors[error.path[0]] = error.message;
+          }
+        });
+        setValidationErrors(errors);
+      }
+      return false;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
     try {
       await signup(name, email, password);
@@ -117,9 +162,16 @@ export default function SignupPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm"
+                    className={`pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm ${
+                      validationErrors.name ? "border-red-500" : ""
+                    }`}
                   />
                 </div>
+                {validationErrors.name && (
+                  <p className="text-sm text-red-500">
+                    {validationErrors.name}
+                  </p>
+                )}
               </motion.div>
 
               <motion.div
@@ -142,9 +194,16 @@ export default function SignupPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm"
+                    className={`pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm ${
+                      validationErrors.email ? "border-red-500" : ""
+                    }`}
                   />
                 </div>
+                {validationErrors.email && (
+                  <p className="text-sm text-red-500">
+                    {validationErrors.email}
+                  </p>
+                )}
               </motion.div>
 
               <motion.div
@@ -167,9 +226,20 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm"
+                    className={`pl-10 bg-white/50 border-white/20 focus:border-green-500/50 focus:ring-green-500/50 backdrop-blur-sm ${
+                      validationErrors.password ? "border-red-500" : ""
+                    }`}
                   />
                 </div>
+                {validationErrors.password && (
+                  <p className="text-sm text-red-500">
+                    {validationErrors.password}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Password must be at least 8 characters long and contain
+                  uppercase, lowercase, number, and special character
+                </p>
               </motion.div>
 
               {error && (
