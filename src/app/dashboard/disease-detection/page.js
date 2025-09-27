@@ -91,6 +91,7 @@ export default function DiseaseDetectionPage() {
       }
 
     } catch (err) {
+      console.error("Error detecting disease:", err);
       setError("Failed to detect disease. Please try again.");
     } finally {
       setLoading(false);
