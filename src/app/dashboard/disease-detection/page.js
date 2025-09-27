@@ -71,9 +71,26 @@ export default function DiseaseDetectionPage() {
       }
 
       const data = await response.json();
-      setDetectionResult(data);
+      
+      // **FIX:** Process the actual API response structure
+      if (Array.isArray(data) && data.length > 0) {
+        const topPrediction = data[0];
+        const allConfidences = data[0].confidences;
+
+        setDetectionResult({
+          disease: topPrediction.label.replace(/_/g, " "), // Format label for display
+          confidence: (topPrediction.confidences[0].confidence * 100).toFixed(2),
+          // Description and treatments are no longer provided by this backend,
+          // so we provide a generic message or you can add them back based on the label.
+          description: `The model identified this as ${topPrediction.label.replace(/_/g, " ")}.`,
+          treatments: ["Consult an agricultural expert for specific treatment advice based on this preliminary result."],
+          allConfidences: allConfidences, // Store all predictions if you want to display them
+        });
+      } else {
+        throw new Error("Invalid response format from the server.");
+      }
+
     } catch (err) {
-      console.error("Error uploading image:", err);
       setError("Failed to detect disease. Please try again.");
     } finally {
       setLoading(false);
@@ -205,17 +222,25 @@ export default function DiseaseDetectionPage() {
               <h3 className="text-2xl font-bold text-white mb-4">
                 Detection Results:
               </h3>
-              <p className="text-white/90 text-lg mb-2">
-                <span className="font-semibold">Disease Detected:</span>{" "}
-                {detectionResult.disease}
-              </p>
-              <p className="text-white/80 text-md mb-4">
-                <span className="font-semibold">Confidence:</span>{" "}
-                {detectionResult.confidence}%
-              </p>
+              <div className="space-y-4">
+                <p className="text-white/90 text-lg">
+                  <span className="font-semibold">Disease Detected:</span>{" "}
+                  {detectionResult.disease}
+                </p>
+                <p className="text-white/80 text-md">
+                  <span className="font-semibold">Confidence:</span>{" "}
+                  {detectionResult.confidence}%
+                </p>
+                {/* <p className="text-white/80 text-md">
+                  <span className="font-semibold">Description:</span>{" "}
+                  {detectionResult.description}
+                </p> */}
+                <div>
+                  <h4 className="font-semibold text-white/90 text-lg mb-2">Treatment Recommendations:</h4>
+                  <ul className="list-disc list-inside text-white/80 space-y-1">{detectionResult.treatments.map((t, i) => <li key={i}>{t}</li>)}</ul>
+                </div>
+              </div>
 
-              {/* Removed Description Section */}
-              {/* Removed Treatment Recommendations Section */}
             </motion.div>
           )}
         </motion.div>
