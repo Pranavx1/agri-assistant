@@ -5,8 +5,6 @@ import admin from 'firebase-admin';
 const prisma = new PrismaClient();
 
 // --- Firebase Admin Initialization ---
-// Make sure your service account JSON is available
-// You'll need to set GOOGLE_APPLICATION_CREDENTIALS in Vercel's environment variables
 try {
   if (!admin.apps.length) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
@@ -23,13 +21,13 @@ const db = admin.database();
 
 // --- Main Cron Job Logic ---
 export async function GET(request) {
-  // 1. Protect the endpoint with a secret key
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // 1. Protect the endpoint with a secret search parameter
+  const secret = request.nextUrl.searchParams.get('secret');
+  if (secret !== process.env.CRON_SECRET) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. The Pump Control Logic (moved from your script)
+  // 2. The Pump Control Logic (same as before)
   const MOISTURE_THRESHOLD = 20;
   const PUMP_ID = 'main_pump_1';
 
@@ -40,10 +38,11 @@ export async function GET(request) {
     if (soilMoisture === null) {
       return NextResponse.json({ message: 'Soil moisture data not available.' });
     }
+    
+    // ... (The rest of the pump control logic is exactly the same) ...
 
     const pump = await prisma.pumpStatus.findUnique({ where: { id: PUMP_ID } });
-    if (!pump) {
-         // Create a default record if it doesn't exist
+     if (!pump) {
         await prisma.pumpStatus.create({ data: { id: PUMP_ID, isActive: false, waterDelivered: 0 } });
         return NextResponse.json({ message: 'Initial pump record created.' });
     }
