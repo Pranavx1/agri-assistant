@@ -4,16 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Loader2, Leaf } from "lucide-react";
+import { ArrowLeft, Loader2, Leaf, Thermometer, Droplets } from "lucide-react";
+import { useSensorData } from "@/hooks/sensorData"; // Adjust path to your hook
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -23,33 +15,26 @@ const fadeIn = {
 
 export default function CropRecommendationsPage() {
   const router = useRouter();
+  // 'loading' is for the recommendation API call
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    soilType: "",
-    climate: "",
-    season: "",
-    waterAvailability: "",
-    landSize: "",
-  });
   const [recommendations, setRecommendations] = useState(null);
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  // Get live sensor data. 'sensorLoading' is for the initial Firebase fetch.
+  const { sensorData, loading: sensorLoading } = useSensorData();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!sensorData) {
+      alert("Sensor data is not yet available. Please wait.");
+      return;
+    }
     setLoading(true);
+    setRecommendations(null); // Clear previous recommendations
     try {
       const response = await fetch("/api/crop-recommendations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        // Send the live sensor data to the backend
+        body: JSON.stringify(sensorData),
       });
 
       if (!response.ok) {
@@ -60,7 +45,6 @@ export default function CropRecommendationsPage() {
       setRecommendations(data);
     } catch (error) {
       console.error("Error:", error);
-      // You might want to show an error message to the user here
     } finally {
       setLoading(false);
     }
@@ -68,27 +52,10 @@ export default function CropRecommendationsPage() {
 
   return (
     <div className="min-h-screen relative p-6 overflow-hidden">
-      {/* Background Pattern */}
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-blue-50">
-        {/* Animated gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 via-blue-400/10 to-purple-400/10 animate-gradient-x"></div>
-
-        {/* Dot pattern */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
-        </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          {/* Large gradient orbs */}
-          <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-blue-300/30 to-cyan-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-purple-300/30 to-indigo-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/2 w-[800px] h-[800px] bg-gradient-to-br from-green-300/30 to-emerald-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        </div>
-
-        {/* Light beam effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
       </div>
 
       {/* Content */}
@@ -99,11 +66,7 @@ export default function CropRecommendationsPage() {
         variants={fadeIn}
       >
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            className="hover:bg-white/20"
-            onClick={() => router.back()}
-          >
+          <Button variant="ghost" className="hover:bg-white/20" onClick={() => router.back()}>
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </Button>
@@ -118,157 +81,70 @@ export default function CropRecommendationsPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-gradient-to-br from-black/70 to-gray-900/70 border border-white/40 shadow-2xl backdrop-blur-md rounded-xl p-8 space-y-6"
         >
-          <h2 className="text-2xl font-bold text-white text-center mb-6">
-            Get Personalized Recommendations
-          </h2>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white">Live Sensor Data</h2>
+            <p className="text-white/80 mt-2">
+              Using real-time data from your sensors to generate recommendations.
+            </p>
+          </div>
 
-          <p className="text-white/80 text-center mb-8">
-            Fill in the details below to get crop recommendations based on your
-            conditions
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="soilType" className="text-white/90 mb-2 block">
-                  Soil Type
-                </Label>
-                <Select
-                  value={formData.soilType}
-                  onValueChange={(value) =>
-                    handleInputChange("soilType", value)
-                  }
-                >
-                  <SelectTrigger className="w-full bg-white/10 text-white border border-white/20 backdrop-blur-sm focus:ring-offset-0 focus:ring-transparent">
-                    <SelectValue placeholder="Select soil type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg text-white border-white/20">
-                    <SelectItem value="loamy">Loamy</SelectItem>
-                    <SelectItem value="sandy">Sandy</SelectItem>
-                    <SelectItem value="clay">Clay</SelectItem>
-                    <SelectItem value="silty">Silty</SelectItem>
-                    <SelectItem value="peaty">Peaty</SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* Sensor Data Display */}
+          <div className="p-4 bg-white/10 border border-white/20 rounded-lg">
+            {sensorLoading ? (
+              <p className="text-white/80 text-center">Fetching live sensor data...</p>
+            ) : sensorData ? (
+              <div className="grid grid-cols-2 gap-4 text-white">
+                <div className="flex items-center space-x-2">
+                  <Thermometer className="w-5 h-5 text-red-400" />
+                  <span>Temp: {sensorData.dht?.temperature}°C</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Droplets className="w-5 h-5 text-blue-400" />
+                  <span>Humidity: {sensorData.dht?.humidity}%</span>
+                </div>
               </div>
+            ) : (
+              <p className="text-red-400 text-center">Could not load sensor data.</p>
+            )}
+          </div>
 
-              <div>
-                <Label htmlFor="climate" className="text-white/90 mb-2 block">
-                  Climate
-                </Label>
-                <Select
-                  value={formData.climate}
-                  onValueChange={(value) => handleInputChange("climate", value)}
-                >
-                  <SelectTrigger className="w-full bg-white/10 text-white border border-white/20 backdrop-blur-sm focus:ring-offset-0 focus:ring-transparent">
-                    <SelectValue placeholder="Select climate" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg text-white border-white/20">
-                    <SelectItem value="tropical">Tropical</SelectItem>
-                    <SelectItem value="temperate">Temperate</SelectItem>
-                    <SelectItem value="arid">Arid</SelectItem>
-                    <SelectItem value="mediterranean">Mediterranean</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="season" className="text-white/90 mb-2 block">
-                  Season
-                </Label>
-                <Select
-                  value={formData.season}
-                  onValueChange={(value) => handleInputChange("season", value)}
-                >
-                  <SelectTrigger className="w-full bg-white/10 text-white border border-white/20 backdrop-blur-sm focus:ring-offset-0 focus:ring-transparent">
-                    <SelectValue placeholder="Select season" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg text-white border-white/20">
-                    <SelectItem value="spring">Spring</SelectItem>
-                    <SelectItem value="summer">Summer</SelectItem>
-                    <SelectItem value="autumn">Autumn</SelectItem>
-                    <SelectItem value="winter">Winter</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="waterAvailability"
-                  className="text-white/90 mb-2 block"
-                >
-                  Water Availability
-                </Label>
-                <Select
-                  value={formData.waterAvailability}
-                  onValueChange={(value) =>
-                    handleInputChange("waterAvailability", value)
-                  }
-                >
-                  <SelectTrigger className="w-full bg-white/10 text-white border border-white/20 backdrop-blur-sm focus:ring-offset-0 focus:ring-transparent">
-                    <SelectValue placeholder="Select water availability" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg text-white border-white/20">
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="landSize" className="text-white/90 mb-2 block">
-                Land Size (acres)
-              </Label>
-              <Input
-                type="number"
-                id="landSize"
-                placeholder="Enter land size"
-                value={formData.landSize}
-                onChange={(e) => handleInputChange("landSize", e.target.value)}
-                className="w-full bg-white/10 text-white border border-white/20 backdrop-blur-sm placeholder:text-white/70 focus-visible:ring-offset-0 focus-visible:ring-transparent"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-md shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                "Get Recommendations"
-              )}
-            </Button>
-          </form>
+          <Button
+            onClick={handleSubmit}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-md shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
+            disabled={loading || sensorLoading || !sensorData}
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              "Get Recommendations"
+            )}
+          </Button>
         </motion.div>
 
         {recommendations && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8 p-6 bg-gradient-to-br from-black/70 to-gray-900/70 border border-white/40 backdrop-blur-md rounded-xl shadow-lg"
-          >
-            <h3 className="text-2xl font-bold text-white mb-4">
-              Recommended Crops:
-            </h3>
-            <ul className="list-disc list-inside text-white/90 space-y-2">
-              {recommendations.crops.map((crop, index) => (
-                <li key={index} className="flex items-center">
-                  <Leaf className="w-5 h-5 text-green-400 mr-2" />
-                  {crop}
-                </li>
-              ))}
-            </ul>
-            {recommendations.notes && (
-              <p className="mt-4 text-white/70">
-                Notes: {recommendations.notes}
-              </p>
-            )}
-          </motion.div>
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.3 }}
+             className="mt-8 p-6 bg-gradient-to-br from-black/70 to-gray-900/70 border border-white/40 backdrop-blur-md rounded-xl shadow-lg"
+           >
+             <h3 className="text-2xl font-bold text-white mb-4">
+               Recommended Crops:
+             </h3>
+             <ul className="list-disc list-inside text-white/90 space-y-2">
+               {recommendations.crops.map((crop, index) => (
+                 <li key={index} className="flex items-center">
+                   <Leaf className="w-5 h-5 text-green-400 mr-2" />
+                   {crop}
+                 </li>
+               ))}
+             </ul>
+             {recommendations.notes && (
+               <p className="mt-4 text-white/70">
+                 Notes: {recommendations.notes}
+               </p>
+             )}
+           </motion.div>
         )}
       </motion.div>
     </div>

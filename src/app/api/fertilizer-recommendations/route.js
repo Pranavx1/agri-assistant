@@ -1,156 +1,90 @@
 import { NextResponse } from "next/server";
 
-// Mock fertilizer database - In a real application, this would come from a database
+// --- Fertilizer Database ---
+// A simple database of common fertilizers and their properties.
 const fertilizerDatabase = {
-  rice: {
-    clay: {
-      seedling: {
-        6.5: [
-          {
-            name: "NPK 10-20-10",
-            description: "High phosphorus for root development",
-            npk: "10-20-10",
-            application: [
-              "Apply 50 kg/ha at planting",
-              "Ensure even distribution",
-            ],
-          },
-        ],
-        "7.0": [
-          {
-            name: "NPK 12-24-12",
-            description: "Balanced nutrients for alkaline soil",
-            npk: "12-24-12",
-            application: [
-              "Apply 45 kg/ha at planting",
-              "Mix thoroughly with soil",
-            ],
-          },
-        ],
-      },
-      vegetative: {
-        6.5: [
-          {
-            name: "NPK 20-10-10",
-            description: "High nitrogen for vegetative growth",
-            npk: "20-10-10",
-            application: [
-              "Apply 60 kg/ha every 3 weeks",
-              "Water immediately after application",
-            ],
-          },
-        ],
-      },
-    },
+  urea: {
+    name: "Urea",
+    npk: "46-0-0",
+    reason: "Excellent source of Nitrogen (N) for promoting leafy, vegetative growth.",
+    application: "Apply during the early to mid-growth stages. Avoid direct contact with seeds."
   },
-  wheat: {
-    loamy: {
-      seedling: {
-        "6.0": [
-          {
-            name: "NPK 15-15-15",
-            description: "Balanced nutrients for wheat seedlings",
-            npk: "15-15-15",
-            application: ["Apply 40 kg/ha at planting", "Broadcast evenly"],
-          },
-        ],
-      },
-    },
+  dap: {
+    name: "Di-Ammonium Phosphate (DAP)",
+    npk: "18-46-0",
+    reason: "High in Phosphorus (P) for strong root development and flowering.",
+    application: "Best applied at the time of sowing or for young plants."
   },
-  corn: {
-    sandy: {
-      vegetative: {
-        "6.0": [
-          {
-            name: "Urea (46-0-0)",
-            description: "High nitrogen for rapid growth",
-            npk: "46-0-0",
-            application: [
-              "Side-dress at V6 stage",
-              "Avoid contact with leaves",
-            ],
-          },
-        ],
-      },
-    },
+  mop: {
+    name: "Muriate of Potash (MOP)",
+    npk: "0-0-60",
+    reason: "Concentrated source of Potassium (K) for overall plant health, fruit quality, and disease resistance.",
+    application: "Apply during the flowering and fruiting stages."
   },
-  soybeans: {
-    clay: {
-      flowering: {
-        6.8: [
-          {
-            name: "Potash (0-0-60)",
-            description: "Essential for pod filling and overall health",
-            npk: "0-0-60",
-            application: ["Apply before flowering", "Incorporate into soil"],
-          },
-        ],
-      },
-    },
+  balanced: {
+    name: "Balanced NPK (e.g., 19-19-19 or 20-20-20)",
+    npk: "Varies (e.g., 19-19-19)",
+    reason: "Provides an equal ratio of all three primary nutrients, ideal for general purpose feeding or when all nutrients are low.",
+    application: "Can be used throughout the growth cycle, especially for vegetables."
   },
-  vegetables: {
-    silty: {
-      fruiting: {
-        6.5: [
-          {
-            name: "Calcium Nitrate",
-            description: "Prevents blossom end rot in fruiting vegetables",
-            npk: "15-0-0 + 19% Calcium",
-            application: [
-              "Foliar spray or soil application",
-              "Apply regularly during fruiting",
-            ],
-          },
-        ],
-      },
-    },
-  },
+  compost: {
+    name: "Organic Compost",
+    npk: "Varies (e.g., 2-1-1)",
+    reason: "Improves soil structure and provides a slow-release, balanced mix of micronutrients.",
+    application: "Mix into the soil before planting or use as a top dressing."
+  }
 };
 
 export async function POST(request) {
   try {
-    const { cropType, soilType, growthStage, soilPh } = await request.json();
+    const sensorData = await request.json();
 
-    if (!cropType || !soilType || !growthStage || !soilPh) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    if (!sensorData || !sensorData.npk) {
+      return NextResponse.json({ error: "Invalid sensor data provided" }, { status: 400 });
     }
 
+    const { nitrogen, phosphorus, potassium } = sensorData.npk;
     let recommendations = [];
-    let notes = "";
 
-    const specificRecommendations =
-      fertilizerDatabase?.[cropType]?.[soilType]?.[growthStage]?.[soilPh];
+    // --- Recommendation Logic based on NPK values ---
+    // NOTE: These thresholds are for demonstration. Real-world values would be more nuanced.
+    const LOW_THRESHOLD = 10; 
 
-    if (specificRecommendations && specificRecommendations.length > 0) {
-      recommendations = specificRecommendations;
-      notes =
-        "These are the top recommendations based on your specific conditions.";
+    // If all nutrients are very low, suggest a balanced approach first.
+    if (nitrogen < LOW_THRESHOLD && phosphorus < LOW_THRESHOLD && potassium < LOW_THRESHOLD) {
+      recommendations.push(fertilizerDatabase.balanced);
+      recommendations.push(fertilizerDatabase.compost);
     } else {
-      // Fallback recommendations if specific match not found
-      recommendations = [
-        {
-          name: "NPK 14-14-14",
-          description: "Balanced fertilizer suitable for most crops",
-          npk: "14-14-14",
-          application: ["Apply 50 kg/ha", "General application guidelines"],
-        },
-      ];
-      notes =
-        "No specific recommendations found for your exact combination. Here are some general adaptable fertilizers.";
+      // Recommend specific fertilizers based on the lowest detected nutrient.
+      if (nitrogen < LOW_THRESHOLD) {
+        recommendations.push(fertilizerDatabase.urea);
+      }
+      if (phosphorus < LOW_THRESHOLD) {
+        recommendations.push(fertilizerDatabase.dap);
+      }
+      if (potassium < LOW_THRESHOLD) {
+        recommendations.push(fertilizerDatabase.mop);
+      }
+    }
+    
+    // If readings are fine, recommend compost for soil health
+    if (recommendations.length === 0) {
+        recommendations.push(fertilizerDatabase.compost);
     }
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Ensure no duplicates
+    const finalRecommendations = [...new Map(recommendations.map(item => [item.name, item])).values()];
+    
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    return NextResponse.json({ fertilizers: recommendations, notes });
+    return NextResponse.json({
+      fertilizers: finalRecommendations,
+      notes: "Always test soil pH before application, as it affects nutrient absorption. Follow product instructions for dosage based on your land size."
+    });
+
   } catch (error) {
-    console.error("Error in fertilizer recommendations API:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
