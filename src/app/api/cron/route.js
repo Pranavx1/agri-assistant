@@ -32,7 +32,7 @@ export async function GET(request) {
   const PUMP_ID = 'main_pump_1';
 
   try {
-    const snapshot = await db.ref('/npk/soil_moisture').once('value');
+    const snapshot = await db.ref('/soil_moisture').once('value');
     const soilMoisture = snapshot.val();
 
     if (soilMoisture === null) {
