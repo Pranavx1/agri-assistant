@@ -40,7 +40,7 @@ export async function GET(request) {
     }
 
     // Get the most recent status record for this pump
-    const lastStatus = await prisma.pumpStatus.findFirst({
+    const lastStatus = await prisma.PumpStatus.findFirst({
       where: { pumpId: PUMP_IDENTIFIER },
       orderBy: { createdAt: 'desc' },
     });
@@ -62,7 +62,7 @@ export async function GET(request) {
 
     // If the status changed, create a new record in the database
     if (statusChanged) {
-      await prisma.pumpStatus.create({
+      await prisma.PumpStatus.create({
         data: {
           pumpId: PUMP_IDENTIFIER,
           isActive: newStatus,
