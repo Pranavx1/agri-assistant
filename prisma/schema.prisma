@@ -43,8 +43,8 @@ model DiseaseDetection {
 }
 
 model PumpStatus {
-  id            String    @id @default(cuid())
-  isActive      Boolean   @default(false)
-  waterDelivered Float    @default(0)
-  lastUpdated   DateTime  @default(now())
-} 
+  id        Int      @id @default(autoincrement()) // A unique ID for each log entry
+  pumpId    String   // The ID of the pump, e.g., "main_pump_1"
+  isActive  Boolean  // The pump's status at the time of this entry
+  createdAt DateTime @default(now()) // The timestamp of when this entry was created
+}

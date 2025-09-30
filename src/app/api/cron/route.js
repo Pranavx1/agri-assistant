@@ -21,15 +21,15 @@ const db = admin.database();
 
 // --- Main Cron Job Logic ---
 export async function GET(request) {
-  // 1. Protect the endpoint with a secret search parameter
+  // 1. Protect the endpoint with a secret
   const secret = request.nextUrl.searchParams.get('secret');
   if (secret !== process.env.CRON_SECRET) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. The Pump Control Logic (same as before)
+  // 2. The Pump Control Logic for History Logging
   const MOISTURE_THRESHOLD = 20;
-  const PUMP_ID = 'main_pump_1';
+  const PUMP_IDENTIFIER = 'main_pump_1';
 
   try {
     const snapshot = await db.ref('/soil_moisture').once('value');
@@ -38,25 +38,44 @@ export async function GET(request) {
     if (soilMoisture === null) {
       return NextResponse.json({ message: 'Soil moisture data not available.' });
     }
-    
-    // ... (The rest of the pump control logic is exactly the same) ...
 
-    const pump = await prisma.pumpStatus.findUnique({ where: { id: PUMP_ID } });
-     if (!pump) {
-        await prisma.pumpStatus.create({ data: { id: PUMP_ID, isActive: false, waterDelivered: 0 } });
-        return NextResponse.json({ message: 'Initial pump record created.' });
+    // Get the most recent status record for this pump
+    const lastStatus = await prisma.pumpStatus.findFirst({
+      where: { pumpId: PUMP_IDENTIFIER },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const currentIsActive = lastStatus ? lastStatus.isActive : false;
+    let statusChanged = false;
+    let newStatus = currentIsActive;
+
+    // Logic to turn the pump ON
+    if (soilMoisture < MOISTURE_THRESHOLD && !currentIsActive) {
+      statusChanged = true;
+      newStatus = true;
+    }
+    // Logic to turn the pump OFF
+    else if (soilMoisture >= MOISTURE_THRESHOLD && currentIsActive) {
+      statusChanged = true;
+      newStatus = false;
     }
 
-    let updated = false;
-    if (soilMoisture < MOISTURE_THRESHOLD && !pump.isActive) {
-      await prisma.pumpStatus.update({ where: { id: PUMP_ID }, data: { isActive: true, lastUpdated: new Date() } });
-      updated = true;
-    } else if (soilMoisture >= MOISTURE_THRESHOLD && pump.isActive) {
-      await prisma.pumpStatus.update({ where: { id: PUMP_ID }, data: { isActive: false, lastUpdated: new Date() } });
-      updated = true;
+    // If the status changed, create a new record in the database
+    if (statusChanged) {
+      await prisma.pumpStatus.create({
+        data: {
+          pumpId: PUMP_IDENTIFIER,
+          isActive: newStatus,
+        },
+      });
     }
-    
-    return NextResponse.json({ success: true, updated, soilMoisture, pumpStatus: pump.isActive });
+
+    return NextResponse.json({
+      success: true,
+      statusChanged,
+      soilMoisture,
+      pumpStatus: newStatus,
+    });
   } catch (error) {
     console.error('Cron job error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
