@@ -1,114 +1,109 @@
 import { NextResponse } from "next/server";
 
-// --- Crop Database ---
-// A simple database of crops and their ideal growing conditions.
-// In a real-world application, this would be a much larger database.
+// --- MODIFIED: Crop Database now includes preferred soil types ---
 const cropDatabase = [
-  {
-    name: "Rice",
-    idealTemp: [25, 35], // Ideal temperature range in Celsius
-    idealHumidity: [70, 90], // Ideal humidity range in %
-    notes: "Requires significant water and high humidity."
-  },
-  {
-    name: "Wheat",
-    idealTemp: [15, 25],
-    idealHumidity: [50, 70],
-    notes: "A staple crop that prefers cooler, moderate conditions."
-  },
-  {
-    name: "Maize (Corn)",
-    idealTemp: [21, 27],
-    idealHumidity: [60, 80],
-    notes: "Versatile crop that thrives in warm and humid weather."
-  },
-  {
-    name: "Cotton",
-    idealTemp: [25, 35],
-    idealHumidity: [50, 65],
-    notes: "Prefers hot temperatures but moderate humidity."
-  },
-  {
-    name: "Sugarcane",
-    idealTemp: [26, 33],
-    idealHumidity: [75, 90],
-    notes: "A tropical plant that requires high heat and moisture."
-  },
-  {
-    name: "Potatoes",
-    idealTemp: [15, 20],
-    idealHumidity: [60, 75],
-    nutrientBoost: "potassium", // This crop benefits from higher potassium
-    notes: "A cool-weather crop that benefits from potassium for tuber growth."
-  },
-  {
-    name: "Tomatoes",
-    idealTemp: [21, 29],
-    idealHumidity: [65, 85],
-    nutrientBoost: "potassium",
-    notes: "Loves warm weather and potassium for fruiting."
-  },
-  {
-    name: "Millet",
-    idealTemp: [26, 30],
-    idealHumidity: [30, 50],
-    notes: "Extremely drought-resistant, perfect for arid conditions."
-  },
+    {
+        name: "Rice",
+        idealTemp: [25, 35],
+        idealHumidity: [70, 90],
+        preferredSoil: ["Clay", "Loamy"],
+        notes: "Requires significant water and high humidity. Thrives in clay and loamy soils."
+    },
+    {
+        name: "Wheat",
+        idealTemp: [15, 25],
+        idealHumidity: [50, 70],
+        preferredSoil: ["Loamy"],
+        notes: "A staple crop that prefers well-drained loamy soil."
+    },
+    {
+        name: "Maize",
+        idealTemp: [21, 27],
+        idealHumidity: [60, 80],
+        preferredSoil: ["Loamy", "Sandy"],
+        notes: "Versatile crop that thrives in warm weather and sandy or loamy soils."
+    },
+    {
+        name: "Cotton",
+        idealTemp: [25, 35],
+        idealHumidity: [50, 65],
+        preferredSoil: ["Sandy", "Loamy"],
+        notes: "Prefers hot temperatures and well-drained sandy loam."
+    },
+    {
+        name: "Sugarcane",
+        idealTemp: [26, 33],
+        idealHumidity: [75, 90],
+        preferredSoil: ["Clay", "Loamy"],
+        notes: "A tropical plant that requires high heat and moisture-retentive soils."
+    },
+    {
+        name: "Jute",
+        idealTemp: [24, 35],
+        idealHumidity: [70, 90],
+        preferredSoil: ["Loamy", "Silty"],
+        notes: "A fiber crop that loves alluvial (silty and loamy) soils."
+    },
+    {
+        name: "Coffee",
+        idealTemp: [18, 25],
+        idealHumidity: [70, 80],
+        preferredSoil: ["Loamy", "Peaty"],
+        notes: "Prefers moderate temperatures and well-drained, acidic loamy soils."
+    }
 ];
 
 export async function POST(request) {
   try {
-    // 1. Get sensor data from the request
+    // 1. Get all data from the request
     const sensorData = await request.json();
+    // --- MODIFIED: Destructure soilType from the request body ---
+    const { soilType } = sensorData;
 
-    // Validate that the necessary data exists
-    if (!sensorData || !sensorData.dht || !sensorData.npk) {
-      return NextResponse.json({ error: "Invalid sensor data provided" }, { status: 400 });
+    if (!sensorData || !sensorData.dht || !soilType) {
+      return NextResponse.json({ error: "Invalid data: temperature, humidity, and soilType are required." }, { status: 400 });
     }
 
     const { temperature, humidity } = sensorData.dht;
-    const { potassium } = sensorData.npk;
 
-    // 2. Score each crop based on the sensor data
+    // 2. Score each crop based on the sensor data and soil type
     const cropScores = cropDatabase.map(crop => {
       let score = 0;
 
       // Score based on temperature
       if (temperature >= crop.idealTemp[0] && temperature <= crop.idealTemp[1]) {
-        score += 3; // High score for being in the ideal range
+        score += 3;
       } else if (Math.abs((crop.idealTemp[0] + crop.idealTemp[1]) / 2 - temperature) < 5) {
-        score += 1; // Lower score for being close to the ideal range
+        score += 1;
       }
 
       // Score based on humidity
       if (humidity >= crop.idealHumidity[0] && humidity <= crop.idealHumidity[1]) {
-        score += 2; // High score for ideal humidity
+        score += 2;
       }
 
-      // Bonus score for specific nutrient needs (e.g., potassium for potatoes/tomatoes)
-      if (crop.nutrientBoost === "potassium" && potassium > 0) {
-        score += 1;
+      // --- NEW: Score based on selected soil type ---
+      if (crop.preferredSoil.includes(soilType)) {
+        score += 3; // High score for matching the preferred soil type
       }
-      
+
       return { name: crop.name, score, notes: crop.notes };
     });
 
-    // 3. Sort the crops by score in descending order
+    // 3. Sort and filter the results (logic remains the same)
     cropScores.sort((a, b) => b.score - a.score);
-
-    // 4. Filter out crops with a score of 0 and get the top 3 recommendations
-    const topCrops = cropScores.filter(crop => crop.score > 0).slice(0, 3);
+    const topCrops = cropScores.filter(crop => crop.score > 2).slice(0, 3); // Increased minimum score for better results
 
     if (topCrops.length === 0) {
       return NextResponse.json({
-        crops: ["Millet"],
-        notes: "Current conditions are challenging. Millet is a highly resilient option."
+        crops: ["Millet (Resilient Option)"],
+        notes: "Current conditions are challenging for most crops. Millet is a highly resilient alternative."
       });
     }
 
-    // 5. Format the final response
+    // 4. Format the final response (logic remains the same)
     const recommendedCrops = topCrops.map(c => c.name);
-    const recommendationNotes = `Based on the current conditions, ${topCrops[0].name} appears to be an excellent choice. ${topCrops[0].notes}`;
+    const recommendationNotes = `Based on the current temperature, humidity, and ${soilType.toLowerCase()} soil, ${topCrops[0].name} is an excellent choice. ${topCrops[0].notes}`;
 
     return NextResponse.json({
       crops: recommendedCrops,

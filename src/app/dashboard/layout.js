@@ -4,34 +4,41 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Menu, X, LogOut, Leaf, Droplet, Camera, User } from "lucide-react";
+import { Menu, X, LogOut, Leaf, Droplet, Camera, User, Activity} from "lucide-react";
 import { useState } from "react";
 
 const menuItems = [
   {
     name: "Dashboard",
     path: "/dashboard",
-    icon: <Leaf className="w-5 h-5" />,
+    icon: <Leaf className="w-5 h-5 text-white" />,
     gradient: "from-green-400 to-emerald-500",
   },
   {
     name: "Crop Recommendations",
     path: "/dashboard/crops",
-    icon: <Leaf className="w-5 h-5" />,
+    icon: <Leaf className="w-5 h-5 text-white" />,
     gradient: "from-blue-400 to-cyan-500",
   },
   {
     name: "Fertilizer Guide",
     path: "/dashboard/fertilizers",
-    icon: <Droplet className="w-5 h-5" />,
+    icon: <Droplet className="w-5 h-5 text-white" />,
     gradient: "from-purple-400 to-indigo-500",
   },
   {
     name: "Disease Detection",
     path: "/dashboard/disease-detection",
-    icon: <Camera className="w-5 h-5" />,
+    icon: <Camera className="w-5 h-5 text-white" />,
     gradient: "from-orange-400 to-amber-500",
   },
+  {
+    name: "Status",
+    path: "/dashboard/status",
+    icon: <Activity className="w-5 h-5 text-white" />,
+    // --- MODIFIED: Gradient color changed ---
+    gradient: "from-red-500 to-rose-600",
+  }
 ];
 
 export default function DashboardLayout({ children }) {
@@ -48,29 +55,19 @@ export default function DashboardLayout({ children }) {
     <div className="min-h-screen relative">
       {/* Background Pattern */}
       <div className="fixed inset-0 bg-gradient-to-br from-green-50 via-white to-blue-50">
-        {/* Animated gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 via-blue-400/10 to-purple-400/10 animate-gradient-x"></div>
-
-        {/* Dot pattern */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
           <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
         </div>
-
-        {/* Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-full">
-          {/* Large gradient orbs */}
           <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-green-300/30 to-emerald-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-blue-300/30 to-cyan-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
           <div className="absolute bottom-0 left-1/2 w-[800px] h-[800px] bg-gradient-to-br from-purple-300/30 to-indigo-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-
-          {/* Small floating elements */}
           <div className="absolute top-1/4 right-1/3 w-32 h-32 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float"></div>
           <div className="absolute bottom-1/3 left-1/4 w-40 h-40 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float animation-delay-1000"></div>
           <div className="absolute top-2/3 right-1/4 w-36 h-36 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float animation-delay-2000"></div>
         </div>
-
-        {/* Light beam effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent"></div>
       </div>
 
@@ -114,7 +111,7 @@ export default function DashboardLayout({ children }) {
                   <p className="text-sm font-medium text-gray-800">
                     {user?.name}
                   </p>
-                  <p className="text-xs text-gray-600">{user?.email}</p>
+                  {/* --- MODIFIED: Email removed --- */}
                 </div>
               </div>
 
@@ -125,11 +122,7 @@ export default function DashboardLayout({ children }) {
                   className="p-2"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                  {isMenuOpen ? (
-                    <X className="w-6 h-6" />
-                  ) : (
-                    <Menu className="w-6 h-6" />
-                  )}
+                  {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </Button>
 
                 {/* Mobile Menu Dropdown */}
@@ -149,7 +142,7 @@ export default function DashboardLayout({ children }) {
                           <p className="font-medium text-gray-800">
                             {user?.name}
                           </p>
-                          <p className="text-sm text-gray-600">{user?.email}</p>
+                          {/* --- MODIFIED: Email removed --- */}
                         </div>
                       </div>
                     </div>

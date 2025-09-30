@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Leaf, Thermometer, Droplets } from "lucide-react";
-import { useSensorData } from "@/hooks/sensorData"; // Adjust path to your hook
+import { useSensorData } from "@/hooks/sensorData";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -13,13 +20,22 @@ const fadeIn = {
   transition: { duration: 0.5 },
 };
 
+// --- MODIFIED: Define soil type options ---
+const SOIL_TYPE_OPTIONS = [
+  "Loamy",
+  "Sandy",
+  "Clay",
+  "Silty",
+  "Peaty",
+];
+
 export default function CropRecommendationsPage() {
   const router = useRouter();
-  // 'loading' is for the recommendation API call
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
+  // --- MODIFIED: State for the selected soil type ---
+  const [selectedSoilType, setSelectedSoilType] = useState("");
 
-  // Get live sensor data. 'sensorLoading' is for the initial Firebase fetch.
   const { sensorData, loading: sensorLoading } = useSensorData();
 
   const handleSubmit = async () => {
@@ -28,13 +44,16 @@ export default function CropRecommendationsPage() {
       return;
     }
     setLoading(true);
-    setRecommendations(null); // Clear previous recommendations
+    setRecommendations(null);
     try {
       const response = await fetch("/api/crop-recommendations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Send the live sensor data to the backend
-        body: JSON.stringify(sensorData),
+        // --- MODIFIED: Send sensor data AND the selected soil type ---
+        body: JSON.stringify({
+          ...sensorData,
+          soilType: selectedSoilType,
+        }),
       });
 
       if (!response.ok) {
@@ -108,10 +127,30 @@ export default function CropRecommendationsPage() {
             )}
           </div>
 
+          {/* --- MODIFIED: Soil Type Selection Dropdown --- */}
+          <div className="space-y-2">
+            <label htmlFor="soil-select" className="font-medium text-white/80">
+              Select Soil Type
+            </label>
+            <Select value={selectedSoilType} onValueChange={setSelectedSoilType}>
+              <SelectTrigger id="soil-select" className="w-full bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Choose a soil type..." />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 text-white border-white/20">
+                {SOIL_TYPE_OPTIONS.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             onClick={handleSubmit}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-md shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105"
-            disabled={loading || sensorLoading || !sensorData}
+            // --- MODIFIED: Button is disabled until soil type is selected ---
+            disabled={loading || sensorLoading || !sensorData || !selectedSoilType}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -122,29 +161,29 @@ export default function CropRecommendationsPage() {
         </motion.div>
 
         {recommendations && (
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ delay: 0.3 }}
-             className="mt-8 p-6 bg-gradient-to-br from-black/70 to-gray-900/70 border border-white/40 backdrop-blur-md rounded-xl shadow-lg"
-           >
-             <h3 className="text-2xl font-bold text-white mb-4">
-               Recommended Crops:
-             </h3>
-             <ul className="list-disc list-inside text-white/90 space-y-2">
-               {recommendations.crops.map((crop, index) => (
-                 <li key={index} className="flex items-center">
-                   <Leaf className="w-5 h-5 text-green-400 mr-2" />
-                   {crop}
-                 </li>
-               ))}
-             </ul>
-             {recommendations.notes && (
-               <p className="mt-4 text-white/70">
-                 Notes: {recommendations.notes}
-               </p>
-             )}
-           </motion.div>
+             <motion.div
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.3 }}
+               className="mt-8 p-6 bg-gradient-to-br from-black/70 to-gray-900/70 border border-white/40 backdrop-blur-md rounded-xl shadow-lg"
+             >
+               <h3 className="text-2xl font-bold text-white mb-4">
+                Recommended Crops:
+               </h3>
+               <ul className="list-disc list-inside text-white/90 space-y-2">
+                 {recommendations.crops.map((crop, index) => (
+                   <li key={index} className="flex items-center">
+                     <Leaf className="w-5 h-5 text-green-400 mr-2" />
+                     {crop}
+                   </li>
+                 ))}
+               </ul>
+               {recommendations.notes && (
+                 <p className="mt-4 text-white/70">
+                   Notes: {recommendations.notes}
+                 </p>
+               )}
+             </motion.div>
         )}
       </motion.div>
     </div>

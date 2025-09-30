@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-// --- Fertilizer Database ---
-// A simple database of common fertilizers and their properties.
+// --- Database of common fertilizers ---
 const fertilizerDatabase = {
   urea: {
     name: "Urea",
@@ -18,69 +17,83 @@ const fertilizerDatabase = {
   mop: {
     name: "Muriate of Potash (MOP)",
     npk: "0-0-60",
-    reason: "Concentrated source of Potassium (K) for overall plant health, fruit quality, and disease resistance.",
+    reason: "Concentrated source of Potassium (K) for overall plant health and fruit quality.",
     application: "Apply during the flowering and fruiting stages."
-  },
-  balanced: {
-    name: "Balanced NPK (e.g., 19-19-19 or 20-20-20)",
-    npk: "Varies (e.g., 19-19-19)",
-    reason: "Provides an equal ratio of all three primary nutrients, ideal for general purpose feeding or when all nutrients are low.",
-    application: "Can be used throughout the growth cycle, especially for vegetables."
   },
   compost: {
     name: "Organic Compost",
-    npk: "Varies (e.g., 2-1-1)",
-    reason: "Improves soil structure and provides a slow-release, balanced mix of micronutrients.",
+    npk: "Varies",
+    reason: "Improves soil structure, water retention, and provides a slow-release of essential micronutrients.",
     application: "Mix into the soil before planting or use as a top dressing."
   }
 };
 
+// --- NEW: Database of crop-specific nutrient needs ---
+const cropNutrientNeeds = {
+  "Default": { primary: "All", notes: "A balanced fertilizer is generally a safe choice." },
+  "Rice": { primary: "Nitrogen", notes: "Rice has a high demand for Nitrogen, especially during its vegetative stage to ensure healthy growth." },
+  "Wheat": { primary: "Nitrogen", notes: "Nitrogen is crucial for achieving high yields and protein content in wheat." },
+  "Maize": { primary: "Nitrogen", notes: "Maize is a heavy feeder of Nitrogen, essential for its rapid growth." },
+  "Cotton": { primary: "Nitrogen", notes: "Nitrogen is vital for cotton's early growth, but excess can delay maturity." },
+  "Sugarcane": { primary: "Potassium", notes: "Potassium is key for sugarcane's stalk growth and sugar accumulation." },
+  "Potatoes": { primary: "Potassium", notes: "Potassium is essential for tuber development and quality in potatoes." },
+  "Tomatoes": { primary: "Potassium", notes: "Tomatoes require high levels of Potassium for fruit development and disease resistance." },
+};
+
 export async function POST(request) {
   try {
-    const sensorData = await request.json();
+    const data = await request.json();
+    // --- MODIFIED: Get all inputs from the request body ---
+    const { npk, soilType, crop } = data;
 
-    if (!sensorData || !sensorData.npk) {
-      return NextResponse.json({ error: "Invalid sensor data provided" }, { status: 400 });
+    if (!npk || !soilType || !crop) {
+      return NextResponse.json({ error: "Invalid data: NPK, soilType, and crop are required." }, { status: 400 });
     }
 
-    const { nitrogen, phosphorus, potassium } = sensorData.npk;
-    let recommendations = [];
+    const { nitrogen, phosphorus, potassium } = npk;
+    const recommendations = new Map();
 
-    // --- Recommendation Logic based on NPK values ---
-    // NOTE: These thresholds are for demonstration. Real-world values would be more nuanced.
-    const LOW_THRESHOLD = 10; 
+    const LOW_N_THRESHOLD = 15;
+    const LOW_P_THRESHOLD = 10;
+    const LOW_K_THRESHOLD = 10;
 
-    // If all nutrients are very low, suggest a balanced approach first.
-    if (nitrogen < LOW_THRESHOLD && phosphorus < LOW_THRESHOLD && potassium < LOW_THRESHOLD) {
-      recommendations.push(fertilizerDatabase.balanced);
-      recommendations.push(fertilizerDatabase.compost);
-    } else {
-      // Recommend specific fertilizers based on the lowest detected nutrient.
-      if (nitrogen < LOW_THRESHOLD) {
-        recommendations.push(fertilizerDatabase.urea);
-      }
-      if (phosphorus < LOW_THRESHOLD) {
-        recommendations.push(fertilizerDatabase.dap);
-      }
-      if (potassium < LOW_THRESHOLD) {
-        recommendations.push(fertilizerDatabase.mop);
-      }
+    const cropNeeds = cropNutrientNeeds[crop] || cropNutrientNeeds["Default"];
+
+    // --- NEW: More intelligent recommendation logic ---
+
+    // 1. Check for nutrient deficiencies
+    if (nitrogen < LOW_N_THRESHOLD) {
+      recommendations.set("urea", { ...fertilizerDatabase.urea });
     }
+    if (phosphorus < LOW_P_THRESHOLD) {
+      recommendations.set("dap", { ...fertilizerDatabase.dap });
+    }
+    if (potassium < LOW_K_THRESHOLD) {
+      recommendations.set("mop", { ...fertilizerDatabase.mop });
+    }
+
+    // 2. Prioritize based on the selected crop's primary need
+    if (cropNeeds.primary === "Nitrogen" && recommendations.has("urea")) {
+      recommendations.get("urea").reason = `CRITICAL: Your selected crop, ${crop}, has a high demand for Nitrogen, which is currently low in your soil.`;
+    }
+    if (cropNeeds.primary === "Potassium" && recommendations.has("mop")) {
+      recommendations.get("mop").reason = `CRITICAL: Your selected crop, ${crop}, requires significant Potassium for healthy growth, which is currently low in your soil.`;
+    }
+
+    // 3. Always recommend compost for soil health
+    recommendations.set("compost", { ...fertilizerDatabase.compost });
     
-    // If readings are fine, recommend compost for soil health
-    if (recommendations.length === 0) {
-        recommendations.push(fertilizerDatabase.compost);
+    // 4. Generate dynamic notes based on soil type and crop
+    let finalNotes = cropNeeds.notes;
+    if (soilType === "Sandy") {
+      finalNotes += " Sandy soil drains quickly, so consider smaller, more frequent fertilizer applications.";
+    } else if (soilType === "Clay") {
+      finalNotes += " Clay soil retains nutrients well, but ensure good drainage to prevent waterlogging.";
     }
-
-    // Ensure no duplicates
-    const finalRecommendations = [...new Map(recommendations.map(item => [item.name, item])).values()];
-    
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     return NextResponse.json({
-      fertilizers: finalRecommendations,
-      notes: "Always test soil pH before application, as it affects nutrient absorption. Follow product instructions for dosage based on your land size."
+      fertilizers: Array.from(recommendations.values()),
+      notes: finalNotes
     });
 
   } catch (error) {

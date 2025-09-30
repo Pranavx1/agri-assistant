@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Leaf, Droplet, Camera, Lightbulb } from "lucide-react";
+// --- MODIFIED: Added Activity icon ---
+import { Leaf, Droplet, Camera, Lightbulb, Activity } from "lucide-react";
 import { useEffect } from "react";
 
 const fadeIn = {
@@ -37,37 +38,17 @@ export default function DashboardPage() {
   }, [user, loading, router]);
 
   if (loading || !user) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen relative p-6 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-blue-50">
-        {/* Animated gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 via-blue-400/10 to-purple-400/10 animate-gradient-x"></div>
-
-        {/* Dot pattern */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:24px_24px]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          {/* Large gradient orbs */}
-          <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-green-300/30 to-emerald-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-blue-300/30 to-cyan-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/2 w-[800px] h-[800px] bg-gradient-to-br from-purple-300/30 to-indigo-400/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-
-          {/* Small floating elements */}
-          <div className="absolute top-1/4 right-1/3 w-32 h-32 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float"></div>
-          <div className="absolute bottom-1/3 left-1/4 w-40 h-40 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float animation-delay-1000"></div>
-          <div className="absolute top-2/3 right-1/4 w-36 h-36 bg-white/10 rounded-full mix-blend-overlay filter blur-xl animate-float animation-delay-2000"></div>
-        </div>
-
-        {/* Light beam effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent"></div>
       </div>
 
       {/* Content */}
@@ -82,12 +63,20 @@ export default function DashboardPage() {
             Welcome back, {user?.name}!
           </h1>
           <p className="text-gray-600 text-lg">
-            Here&apos;s an overview of your agricultural assistant
+            Here&apos;s an overview of your agricultural assistant.
           </p>
         </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
+            // --- NEW: System Status card added ---
+            {
+              title: "System Status",
+              description: "View sensor data and pump activity",
+              icon: <Activity className="w-6 h-6" />,
+              gradient: "from-red-400/90 to-rose-500/90",
+              path: "/dashboard/status",
+            },
             {
               title: "Crop Recommendations",
               description: "Get personalized crop suggestions",
