@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSensorData } from "@/hooks/sensorData"; // Your existing hook for live data
-import { Loader2, Thermometer, Droplets, Zap, ZapOff } from "lucide-react";
+import { Loader2, Thermometer, Droplets, Zap, ZapOff, Beaker, Waves } from "lucide-react";
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -14,6 +14,14 @@ export default function DashboardPage() {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const { sensorData, loading: sensorLoading } = useSensorData();
+
+  // Formats sensor values while handling missing readings
+  const formatReading = (value, suffix = "") => {
+    if (value === undefined || value === null || value === "") {
+      return "—";
+    }
+    return `${value}${suffix}`;
+  };
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -76,6 +84,20 @@ export default function DashboardPage() {
                     <span className="text-white">Humidity</span>
                   </div>
                   <span className="font-bold text-xl text-white">{sensorData.dht?.humidity}%</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Beaker className="w-6 h-6 text-purple-300" />
+                    <span className="text-white">TDS</span>
+                  </div>
+                  <span className="font-bold text-xl text-white">{formatReading(sensorData.tds, " ppm")}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Waves className="w-6 h-6 text-cyan-300" />
+                    <span className="text-white">Soil Moisture</span>
+                  </div>
+                  <span className="font-bold text-xl text-white">{formatReading(sensorData.soil_moisture, "%")}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
                   <div className="flex items-center space-x-3"><span className="font-bold text-green-400">N</span><span className="text-white">Nitrogen</span></div>

@@ -107,7 +107,7 @@ export default function DashboardPage() {
               whileHover="hover"
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="h-full border border-white/20 shadow-xl backdrop-blur-md bg-white/10 hover:shadow-2xl transition-shadow duration-300">
+              <Card className="flex h-full flex-col border border-white/20 shadow-xl backdrop-blur-md bg-white/10 hover:shadow-2xl transition-shadow duration-300">
                 <CardHeader
                   className={`bg-gradient-to-br ${card.gradient} text-white rounded-t-lg backdrop-blur-sm`}
                 >
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                     {card.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-6 mt-auto">
                   <Button
                     onClick={() => router.push(card.path)}
                     className={`w-full bg-gradient-to-r ${card.gradient} text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 border-0 hover:scale-[1.02] hover:brightness-110`}

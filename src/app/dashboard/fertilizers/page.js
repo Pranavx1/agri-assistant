@@ -22,8 +22,30 @@ const fadeIn = {
 };
 
 // --- NEW: Define options for both dropdowns ---
-const SOIL_TYPE_OPTIONS = ["Loamy", "Sandy", "Clay", "Silty", "Peaty"];
-const CROP_OPTIONS = ["Rice", "Wheat", "Maize", "Cotton", "Sugarcane", "Potatoes", "Tomatoes"];
+const SOIL_TYPE_OPTIONS = [
+  "Loamy",
+  "Sandy",
+  "Clay",
+  "Silty",
+  "Peaty",
+  "Chalky",
+  "Laterite",
+];
+
+const CROP_OPTIONS = [
+  "Rice",
+  "Wheat",
+  "Maize",
+  "Cotton",
+  "Sugarcane",
+  "Potatoes",
+  "Tomatoes",
+  "Soybean",
+  "Groundnut",
+  "Tea",
+  "Coffee",
+  "Banana",
+];
 
 export default function FertilizerGuidePage() {
   const router = useRouter();

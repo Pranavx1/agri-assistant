@@ -27,6 +27,8 @@ const SOIL_TYPE_OPTIONS = [
   "Clay",
   "Silty",
   "Peaty",
+  "Chalky",
+  "Laterite",
 ];
 
 export default function CropRecommendationsPage() {
